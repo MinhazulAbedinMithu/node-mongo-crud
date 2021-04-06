@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        .div{
+            background-color: rgb(25, 0, 116);
+            padding: 10px;
+            margin: 10px;
+            border: 1px solid green;
+            border-radius: 10px;
+            width: 20%;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>CRUD Operation With Mongo DB</h1>
+    <form action="/addProduct" method="post">
+        <input type="text" name="name" id="name" placeholder="name" required>
+        <input type="text" name="price" placeholder="price" required>
+        <input type="text" name="quantity" placeholder="quantity" required>
+        <button type="submit">Submit</button>
+    </form>
+    <div id="container">
+
+    </div>
+    <div id="update">
+
+    </div>
+
+    <script>
+        function loadAllProducts(){
+            fetch('/products')
+            .then(res => res.json())
+            .then(products => {
+                const container = document.getElementById('container');
+                container.innerHTML = '';
+                products.forEach(product => {
+                    const div = document.createElement('div');
+                    div.className = 'div';
+                    div.innerHTML = `
+                        <h4>Name : ${product.name}</h4>
+                        <p>Price : ${product.price}</p>
+                        <p>Quantity : ${product.quantity}</p>
+                        <button onclick="loadProduct('${product._id}')">Update</button>
+                        <button onclick="deleteProduct(event, '${product._id}')">Delete</button>
+                    `;
+                    
+                    container.appendChild(div);
+                });
+            })
+        }
+        loadAllProducts();
+
+        function deleteProduct(event, id) {
+            fetch(`/delete/${id}`, {
+                method: 'DELETE'
+            })
+            .then(res => res.json())
+            .then(result => {
+                if(result){
+                    event.target.parentNode.style.display = 'none';
+                };
+            })
+        }
+
+        function loadProduct(id){
+            fetch(`/product/${id}`)
+            .then(res => res.json())
+            .then(data => {
+                const update = document.getElementById('update');
+                update.innerHTML = `
+                    <h3>Update Product: ${data.name}</h3>
+                    <h3>Id : ${data._id}</h3>
+                    Price : <input type="text" value='${data.price}' id='price'>
+                    <br/>
+                    Quantity : <input type="text" value='${data.quantity}' id='quantity'>
+                    <br/>
+                    <button onclick="updateProduct(event, '${data._id}')">Submit</button>
+                `;
+            })
+        }
+        function updateProduct(event, id){
+            const price = document.getElementById('price').value;
+            const quantity = document.getElementById('quantity').value;
+            const product = {id, price, quantity};
+            console.log(product);
+            fetch(`/update/${id}`, {
+                method: 'PATCH',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(product)
+            })
+            .then(res => res.json())
+            .then(result => {
+                if(result){
+                    loadAllProducts();
+                }
+            })
+        }
+    </script>
+</body>
+</html>
