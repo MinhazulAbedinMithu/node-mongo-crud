@@ -1,106 +1,100 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <style>
-        .div{
-            background-color: rgb(25, 0, 116);
-            padding: 10px;
-            margin: 10px;
-            border: 1px solid green;
-            border-radius: 10px;
-            width: 20%;
-            color: white;
-        }
-    </style>
-</head>
-<body>
-    <h1>CRUD Operation With Mongo DB</h1>
-    <form action="/addProduct" method="post">
-        <input type="text" name="name" id="name" placeholder="name" required>
-        <input type="text" name="price" placeholder="price" required>
-        <input type="text" name="quantity" placeholder="quantity" required>
-        <button type="submit">Submit</button>
-    </form>
-    <div id="container">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Document</title>
+		<style>
+			.container {
+				display: flex;
+			}
+		</style>
+	</head>
+	<body>
+		<div>
+			<form action="/addItem" method="POST">
+				<input
+					type="text"
+					name="name"
+					id="name"
+					placeholder="Name"
+				/><br /><br />
+				<input type="text" name="age" id="age" placeholder="Age" /><br /><br />
+				<input
+					type="text"
+					name="study"
+					id="study"
+					placeholder="Study"
+				/><br /><br />
+				<input type="submit" value="Add Person" />
+			</form>
+		</div>
+		<div class="container"></div>
+		<div id="updateBox"></div>
 
-    </div>
-    <div id="update">
+		<script>
+			const handleLoadAllItem = () => {
+				fetch("/items")
+					.then((res) => res.json())
+					.then((data) => {
+						const container = document.querySelector(".container");
+						container.innerHTML = '';
+						data.forEach((item) => {
+							const itemBox = document.createElement("div");
+							itemBox.innerHTML = `
+								<h3>${item.name}</h3>
+								<p>Age: ${item.age}</p>
+								<p>Study: ${item.study}</p>
+								<button onclick="LoadSingleItem('${item._id}')">Update</button>
+								<button onclick="handleDeleteItem('${item._id}')">Delete</button>
+							`;
+							container.appendChild(itemBox);
+						});
+					});
+			};
+			handleLoadAllItem();
 
-    </div>
+			const handleDeleteItem = (id) => {
+				fetch(`/delete/${id}`, {
+					method: "DELETE",
+				})
+					.then((res) => res.json())
+					.then((data) => handleLoadAllItem());
+			};
 
-    <script>
-        function loadAllProducts(){
-            fetch('/products')
-            .then(res => res.json())
-            .then(products => {
-                const container = document.getElementById('container');
-                container.innerHTML = '';
-                products.forEach(product => {
-                    const div = document.createElement('div');
-                    div.className = 'div';
-                    div.innerHTML = `
-                        <h4>Name : ${product.name}</h4>
-                        <p>Price : ${product.price}</p>
-                        <p>Quantity : ${product.quantity}</p>
-                        <button onclick="loadProduct('${product._id}')">Update</button>
-                        <button onclick="deleteProduct(event, '${product._id}')">Delete</button>
-                    `;
-                    
-                    container.appendChild(div);
-                });
-            })
-        }
-        loadAllProducts();
+			const LoadSingleItem = (id) => {
+				fetch(`/item/${id}`)
+					.then((res) => res.json())
+					.then((data) => {
+						const { _id, name, age, study } = data[0];
+						const updateBox = document.querySelector("#updateBox");
+						updateBox.innerHTML = `
+						<h4>Name: ${name}</h4>
+						<input type="text" name="age" id="updateAge" value="${age}" /><br />
+						<input type="text" name="study" id="updateStudy" value="${study}" /><br />
+						<input type="submit" value="Update" onclick="handleUpdateItem('${_id}')" />
+						`;
+					});
+			};
 
-        function deleteProduct(event, id) {
-            fetch(`/delete/${id}`, {
-                method: 'DELETE'
-            })
-            .then(res => res.json())
-            .then(result => {
-                if(result){
-                    event.target.parentNode.style.display = 'none';
-                };
-            })
-        }
-
-        function loadProduct(id){
-            fetch(`/product/${id}`)
-            .then(res => res.json())
-            .then(data => {
-                const update = document.getElementById('update');
-                update.innerHTML = `
-                    <h3>Update Product: ${data.name}</h3>
-                    <h3>Id : ${data._id}</h3>
-                    Price : <input type="text" value='${data.price}' id='price'>
-                    <br/>
-                    Quantity : <input type="text" value='${data.quantity}' id='quantity'>
-                    <br/>
-                    <button onclick="updateProduct(event, '${data._id}')">Submit</button>
-                `;
-            })
-        }
-        function updateProduct(event, id){
-            const price = document.getElementById('price').value;
-            const quantity = document.getElementById('quantity').value;
-            const product = {id, price, quantity};
-            console.log(product);
-            fetch(`/update/${id}`, {
-                method: 'PATCH',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(product)
-            })
-            .then(res => res.json())
-            .then(result => {
-                if(result){
-                    loadAllProducts();
-                }
-            })
-        }
-    </script>
-</body>
+			const handleUpdateItem = (id) => {
+				const updatedAge = document.querySelector("#updateAge").value;
+				const updatedStudy = document.querySelector("#updateStudy").value;
+				const updatedItem = { id, updatedAge, updatedStudy };
+				console.log(updatedItem);
+				fetch(`/update/${id}`, {
+					method: "PATCH",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify(updatedItem),
+				})
+					.then((res) => res.json())
+					.then((result) => {
+						if (result) {
+							handleLoadAllItem();
+						}
+					});
+			};
+		</script>
+	</body>
 </html>
